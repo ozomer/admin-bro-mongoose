@@ -1,9 +1,9 @@
 import {
-  BaseRecord, BaseResource, flat, Filter,
+  BaseRecord, BaseResource, flat, Filter, ParamsType,
 } from 'admin-bro'
 import mongoose from 'mongoose'
 import { FindOptions } from './utils/filter.types'
-import Property from './property'
+import Property, { SchemaString } from './property'
 import { convertFilter } from './utils/convert-filter'
 import { createValidationError } from './utils/create-validation-error'
 import { createDuplicateError } from './utils/create-duplicate-error'
@@ -71,11 +71,14 @@ class Resource extends BaseResource {
       return this.MongooseModel.count(convertFilter(filter))
     }
 
-    async find(filters = {}, { limit = 20, offset = 0, sort = {} }: FindOptions) {
+    async find(
+      filters: Filter,
+      { limit = 20, offset = 0, sort = {} }: FindOptions,
+    ): Promise<Array<BaseRecord>> {
       const { direction, sortBy } = sort
-      const sortingParam = {
-        [sortBy]: direction,
-      }
+      const sortingParam = sortBy ? {
+        [sortBy]: direction ?? 'asc',
+      } : {}
       const mongooseObjects = await this.MongooseModel
         .find(convertFilter(filters), {}, {
           skip: offset, limit, sort: sortingParam,
@@ -85,12 +88,12 @@ class Resource extends BaseResource {
       ))
     }
 
-    async findOne(id:string) {
+    async findOne(id:string): Promise<BaseRecord | null> {
       const mongooseObject = await this.MongooseModel.findById(id)
       return new BaseRecord(Resource.stringifyId(mongooseObject), this)
     }
 
-    async findMany(ids: string[]) {
+    async findMany(ids: string[]): Promise<Array<BaseRecord>> {
       const mongooseObjects = await this.MongooseModel.find(
         { _id: ids },
         {},
@@ -100,11 +103,11 @@ class Resource extends BaseResource {
       ))
     }
 
-    build(params) {
+    build(params: Record<string, any>): BaseRecord {
       return new BaseRecord(Resource.stringifyId(params), this)
     }
 
-    async create(params) {
+    async create(params: Record<string, any>): Promise<ParamsType> {
       const parsedParams = this.parseParams(params)
       let mongooseDocument = new this.MongooseModel(parsedParams)
       try {
@@ -121,7 +124,7 @@ class Resource extends BaseResource {
       return Resource.stringifyId(mongooseDocument.toObject())
     }
 
-    async update(id, params) {
+    async update(id: string, params: Record<string, any>): Promise<ParamsType> {
       const parsedParams = this.parseParams(params)
       const unflattedParams = flat.unflatten(parsedParams)
       try {
@@ -129,7 +132,7 @@ class Resource extends BaseResource {
           _id: id,
         }, {
           $set: unflattedParams,
-        }, {
+        } as mongoose.UpdateQuery<any>, {
           new: true,
           runValidators: true,
         })
@@ -139,7 +142,7 @@ class Resource extends BaseResource {
           throw createValidationError(error)
         }
         if (error.code === MONGOOSE_DUPLICATE_ERROR_CODE) {
-          throw createDuplicateError(error, unflattedParams)
+          throw createDuplicateError(error, unflattedParams as object)
         }
         // In update cast errors are not wrapped into a validation errors (as it happens in create).
         // that is why we have to have a different way of handling them - check out tests to see
@@ -151,11 +154,11 @@ class Resource extends BaseResource {
       }
     }
 
-    async delete(id) {
+    async delete(id: string): Promise<void> {
       return this.MongooseModel.findOneAndRemove({ _id: id })
     }
 
-    static stringifyId(mongooseObj) {
+    private static stringifyId(mongooseObj: any) {
       // By default Id field is an ObjectID and when we change entire mongoose model to
       // raw object it changes _id field not to a string but to an object.
       // stringify/parse is a path found here: https://github.com/Automattic/mongoose/issues/2790
@@ -175,11 +178,11 @@ class Resource extends BaseResource {
      *
      * @return  {Object}          converted params
      */
-    parseParams(params) {
+    private parseParams(params: Record<string, any>) {
       const parsedParams = { ...params }
 
       // this function handles ObjectIDs and Arrays recursively
-      const handleProperty = (prefix = '') => (property) => {
+      const handleProperty = (prefix = '') => (property: SchemaString) => {
         const {
           path,
           schema,
@@ -205,7 +208,7 @@ class Resource extends BaseResource {
           if (value === '') {
             parsedParams[fullPath] = []
           } else if (schema && schema.paths) { // we only want arrays of objects (with sub-paths)
-            const subProperties = Object.values(schema.paths)
+            const subProperties = Object.values(schema.paths) as unknown as SchemaString[]
             // eslint-disable-next-line no-plusplus, no-constant-condition
             for (let i = 0; true; i++) { // loop over every item
               const newPrefix = `${fullPath}.${i}`
@@ -228,7 +231,7 @@ class Resource extends BaseResource {
           if (parsedParams[fullPath] === '') {
             parsedParams[fullPath] = {}
           } else {
-            const subProperties = Object.values(schema.paths)
+            const subProperties = Object.values(schema?.paths ?? {}) as unknown as SchemaString[]
             subProperties.forEach(handleProperty(fullPath))
           }
         }

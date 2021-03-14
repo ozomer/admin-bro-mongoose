@@ -4,7 +4,7 @@ import { Schema, SchemaType } from 'mongoose'
 const ID_PROPERTY = '_id'
 const VERSION_KEY_PROPERTY = '__v'
 
-interface SchemaString {
+export interface SchemaString {
   enumValues: string[];
   regExp: string;
   path: string;
