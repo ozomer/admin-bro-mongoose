@@ -1,4 +1,6 @@
-import { BaseRecord, BaseResource, flat } from 'admin-bro'
+import {
+  BaseRecord, BaseResource, flat, Filter,
+} from 'admin-bro'
 import mongoose from 'mongoose'
 import { get } from 'lodash'
 import { FindOptions } from './utils/filter.types'
@@ -66,8 +68,8 @@ class Resource extends BaseResource {
       return this.properties().find(property => property.path() === name) ?? null
     }
 
-    async count(filters = null) {
-      return this.MongooseModel.count(convertFilter(filters))
+    async count(filter: Filter) {
+      return this.MongooseModel.count(convertFilter(filter))
     }
 
     async find(filters = {}, { limit = 20, offset = 0, sort = {} }: FindOptions) {
