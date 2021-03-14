@@ -28,7 +28,6 @@
     "mongoose": ">=5"
   },
   "dependencies": {
-    "escape-regexp": "0.0.1",
     "flat": "^4.1.0"
   },
   "devDependencies": {
