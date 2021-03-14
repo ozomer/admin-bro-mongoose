@@ -1,12 +1,27 @@
 import { BaseProperty } from 'admin-bro'
-import { SchemaType } from 'mongoose'
+import { Schema, SchemaType } from 'mongoose'
 
 const ID_PROPERTY = '_id'
 const VERSION_KEY_PROPERTY = '__v'
 
+interface SchemaString {
+  enumValues: string[];
+  regExp: string;
+  path: string;
+  instance: string;
+  validators: { type: string }[];
+  setters: object[];
+  getters: object[];
+  options?: { ref: string | null };
+  _index: object;
+  position: number;
+  caster?: SchemaString;
+  schema?: Schema;
+}
+
 class Property extends BaseProperty {
     // TODO: Fix typings
-    public mongoosePath: any;
+    public mongoosePath: SchemaString;
 
     /**
      * Crates an object from mongoose schema path
@@ -34,11 +49,12 @@ class Property extends BaseProperty {
      * property = new Property(schema.paths.email))
      */
     constructor(path: SchemaType, position = 0) {
-      super({ path: (path as unknown as { path: string }).path, position })
-      this.mongoosePath = path
+      const mongoosePath = path as unknown as SchemaString
+      super({ path: mongoosePath.path, position })
+      this.mongoosePath = mongoosePath
     }
 
-    instanceToType(mongooseInstance) {
+    instanceToType(mongooseInstance: string) {
       switch (mongooseInstance) {
       case 'String':
         return 'string'
@@ -72,9 +88,12 @@ class Property extends BaseProperty {
 
     reference() {
       if (this.isArray()) {
-        return this.mongoosePath.caster.options && this.mongoosePath.caster.options.ref
+        return (
+          this.mongoosePath.caster && this.mongoosePath.caster.options
+          && this.mongoosePath.caster.options.ref
+        ) ?? null
       }
-      return this.mongoosePath.options && this.mongoosePath.options.ref
+      return (this.mongoosePath.options && this.mongoosePath.options.ref) ?? null
     }
 
     isVisible() {
@@ -95,7 +114,7 @@ class Property extends BaseProperty {
 
     subProperties() {
       if (this.type() === 'mixed') {
-        const subPaths = Object.values(this.mongoosePath.caster.schema.paths) as SchemaType[]
+        const subPaths = Object.values(this.mongoosePath.caster?.schema?.paths ?? {})
         return subPaths.map(p => new Property(p))
       }
       return []
@@ -103,13 +122,13 @@ class Property extends BaseProperty {
 
     type() {
       if (this.isArray()) {
-        let { instance } = this.mongoosePath.caster
+        let { instance } = this.mongoosePath.caster ?? {}
         // For array of embedded schemas mongoose returns null for caster.instance
         // That is why we have to check if caster has a schema
-        if (!instance && this.mongoosePath.caster.schema) {
+        if (!instance && this.mongoosePath.caster?.schema) {
           instance = 'Embedded'
         }
-        return this.instanceToType(instance)
+        return this.instanceToType(instance ?? '')
       }
       return this.instanceToType(this.mongoosePath.instance)
     }
