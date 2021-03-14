@@ -32,13 +32,13 @@ class Resource extends BaseResource {
      * @param {MongooseModel} MongooseModel Class which subclass mongoose.Model
      * @memberof Resource
      */
-    constructor(MongooseModel) {
+    constructor(MongooseModel: mongoose.Model<any>) {
       super(MongooseModel)
       this.MongooseModel = MongooseModel
     }
 
-    static isAdapterFor(MoongooseModel) {
-      return MoongooseModel?.base?.constructor?.name === 'Mongoose'
+    static isAdapterFor(MoongooseModel: mongoose.Model<any>) {
+      return MoongooseModel.base.constructor.name === 'Mongoose'
     }
 
     databaseName() {
