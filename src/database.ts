@@ -6,12 +6,12 @@ import Resource from './resource'
 class Database extends BaseDatabase {
   private readonly connection: Connection;
 
-  constructor(connection) {
+  constructor(connection: Connection) {
     super(connection)
     this.connection = connection
   }
 
-  static isAdapterFor(connection) {
+  static isAdapterFor(connection: Connection) {
     return connection.constructor.name === 'Mongoose'
   }
 
