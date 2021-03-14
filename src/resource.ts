@@ -2,7 +2,6 @@ import {
   BaseRecord, BaseResource, flat, Filter,
 } from 'admin-bro'
 import mongoose from 'mongoose'
-import { get } from 'lodash'
 import { FindOptions } from './utils/filter.types'
 import Property from './property'
 import { convertFilter } from './utils/convert-filter'
@@ -39,7 +38,7 @@ class Resource extends BaseResource {
     }
 
     static isAdapterFor(MoongooseModel) {
-      return get(MoongooseModel, 'base.constructor.name') === 'Mongoose'
+      return MoongooseModel?.base?.constructor?.name === 'Mongoose'
     }
 
     databaseName() {
