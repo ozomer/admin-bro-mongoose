@@ -11,7 +11,8 @@
     "cover": "jest --config ./test/jest.json --runInBand --coverage",
     "lint": "eslint './test/**/*.ts' './src/**/*.ts'",
     "check:all": "yarn lint && yarn build && yarn test",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "install": "npm run build"
   },
   "repository": {
     "type": "git",
