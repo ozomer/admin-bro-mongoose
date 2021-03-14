@@ -1,4 +1,5 @@
 import { BaseProperty } from 'admin-bro'
+import { SchemaType } from 'mongoose'
 
 const ID_PROPERTY = '_id'
 const VERSION_KEY_PROPERTY = '__v'
@@ -32,8 +33,8 @@ class Property extends BaseProperty {
      *
      * property = new Property(schema.paths.email))
      */
-    constructor(path, position = 0) {
-      super({ path: path.path, position })
+    constructor(path: SchemaType, position = 0) {
+      super({ path: (path as unknown as { path: string }).path, position })
       this.mongoosePath = path
     }
 
@@ -94,7 +95,7 @@ class Property extends BaseProperty {
 
     subProperties() {
       if (this.type() === 'mixed') {
-        const subPaths = Object.values(this.mongoosePath.caster.schema.paths)
+        const subPaths = Object.values(this.mongoosePath.caster.schema.paths) as SchemaType[]
         return subPaths.map(p => new Property(p))
       }
       return []

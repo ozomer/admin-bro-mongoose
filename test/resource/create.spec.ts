@@ -1,4 +1,4 @@
-import { ValidationError } from 'admin-bro'
+import { Filter, ValidationError } from 'admin-bro'
 import { factory } from 'factory-girl'
 import Resource from '../../src/resource'
 import validUserRecord from '../fixtures/valid-user-record'
@@ -10,7 +10,7 @@ describe('Resource #create', () => {
 
     const record = await resource.create(validUserRecord)
 
-    expect(await resource.count()).toEqual(1)
+    expect(await resource.count(new Filter({}, resource))).toEqual(1)
     expect(record).toBeInstanceOf(Object)
   })
 
@@ -55,7 +55,7 @@ describe('Resource #create', () => {
 
     await resource.create({ content: 'some content', createdBy: '' })
 
-    const recordsCount = await resource.count()
+    const recordsCount = await resource.count(new Filter({}, resource))
     expect(recordsCount).toEqual(1)
   })
 
@@ -71,7 +71,7 @@ describe('Resource #create', () => {
   it('creates new object for record with nested array', async () => {
     const resource = new Resource(User)
     await factory.createMany('user', 1)
-    const countBefore = await resource.count()
+    const countBefore = await resource.count(new Filter({}, resource))
 
     await resource.create({
       email: 'john@doe.com',
@@ -84,7 +84,7 @@ describe('Resource #create', () => {
       'family.1': '',
     })
 
-    const countAfter = await resource.count()
+    const countAfter = await resource.count(new Filter({}, resource))
     expect(countAfter - countBefore).toEqual(1)
   })
 })
